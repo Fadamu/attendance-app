@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Top Header Bar -->
+<div class="profile-header">
+    <div class="user-info">
+        <h2>{{ current_user.username }}</h2>
+        <p>{{ current_user.department or 'Department Not Set' }}</p>
+    </div>
+    <a href="{{ url_for('logout') }}" class="btn-logout">Logout</a>
+</div>
+
+<!-- Key Performance Stats Cards -->
+<div class="stats-grid">
+    <div class="stat-card primary">
+        <span class="stat-title">Attended</span>
+        <span class="stat-value">{{ total_attended }} Classes</span>
+    </div>
+    <div class="stat-card danger">
+        <span class="stat-title">Missed</span>
+        <span class="stat-value">{{ total_held - total_attended }} Classes</span>
+    </div>
+    <div class="stat-card success">
+        <span class="stat-title">Total Units</span>
+        <span class="stat-value">{{ total_units }} Units</span>
+    </div>
+    <div class="stat-card warning">
+        <span class="stat-title">Total Held</span>
+        <span class="stat-value">{{ total_held }} Classes</span>
+    </div>
+</div>
+
+<!-- Overall Progress Bar & 70% Threshold Status -->
+<div class="progress-section">
+    <div class="progress-header">
+        <span>Semester Attendance Rate</span>
+        <div>
+            <span class="{% if overall_status == 'Safe' %}text-safe{% else %}text-danger{% endif %}" style="font-weight: 800; margin-right: 6px;">
+                {{ overall_percentage }}%
+            </span>
+            <span class="badge {% if overall_status == 'Safe' %}badge-safe{% else %}badge-danger{% endif %}">
+                {{ overall_status }}
+            </span>
+        </div>
+    </div>
+    <div class="progress-bar-bg">
+        <div class="progress-bar-fill {% if overall_status == 'Safe' %}bg-safe{% else %}bg-danger{% endif %}" data-width="{{ overall_percentage }}"></div>
+    </div>
+</div>
+
+<!-- Registered Courses & Class Tracker -->
+<div class="card-section">
+    <div class="section-title">Enrolled Courses</div>
+
+    {% if courses %}
+        {% for course in courses %}
+            <div class="{% if course.status == 'At Risk' %}border-at-risk{% else %}border-safe{% endif %}" style="background: #1e293b; padding: 14px; border-radius: 12px; margin-bottom: 14px;">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <strong style="font-size: 15px; color: #fff;">{{ course.course_code }}</strong>
+                            <span class="badge {% if course.status == 'Safe' %}badge-safe{% else %}badge-danger{% endif %}">
+                                {{ course.status }}
+                            </span>
+                        </div>
+                        <span style="font-size: 13px; color: #94a3b8; display: block; margin-top: 2px;">{{ course.course_name }} ({{ course.units }} Units)</span>
+                    </div>
+                    <div style="text-align: right;">
+                        <span class="{% if course.status == 'Safe' %}text-safe{% else %}text-danger{% endif %}" style="font-size: 15px; font-weight: 800; display: block;">
+                            {{ course.percentage }}%
+                        </span>
+                        <form action="{{ url_for('delete_course', course_id=course.id) }}" method="POST" style="display: inline;">
+                            <button type="submit" class="btn-delete" onclick="return confirm('Remove this course?')">Delete</button>
+                        </form>
+                    </div>
+                </div>
+                
+                <p style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;">
+                    Attended: {{ course.attended_classes }} / {{ course.total_classes }} classes
+                </p>
+
+                <!-- Course Progress Bar -->
+                <div class="progress-bar-bg" style="height: 8px; margin-bottom: 8px;">
+                    <div class="progress-bar-fill {% if course.status == 'Safe' %}bg-safe{% else %}bg-danger{% endif %}" data-width="{{ course.percentage }}"></div>
+                </div>
+
+                <!-- 70% Target Recovery Warning Box -->
+                {% if course.status == 'At Risk' %}
+                    <div class="warning-box">
+                        ⚠️ <strong>Below 70% Target!</strong> Must attend next <strong>{{ course.needed_classes }}</strong> class(es) consecutively to recover.
+                    </div>
+                {% endif %}
+
+                <!-- Class Logger Buttons -->
+                <div class="log-btn-group">
+                    <form action="{{ url_for('log_attendance', course_id=course.id, status='present') }}" method="POST" style="flex: 1;">
+                        <button type="submit" class="btn-log-present">+ Present</button>
+                    </form>
+                    <form action="{{ url_for('log_attendance', course_id=course.id, status='absent') }}" method="POST" style="flex: 1;">
+                        <button type="submit" class="btn-log-absent">+ Missed</button>
+                    </form>
+                </div>
+            </div>
+        {% endfor %}
+    {% else %}
+        <p style="color: #94a3b8; font-size: 13px; text-align: center; padding: 10px 0;">No courses added yet. Register a course below to start tracking.</p>
+    {% endif %}
+</div>
+
+<!-- Department Settings Section -->
+<div class="card-section">
+    <div class="section-title">Department Settings</div>
+    <form action="{{ url_for('update_profile') }}" method="POST">
+        <div class="form-group">
+            <label for="department">Your Department</label>
+            <input type="text" id="department" name="department" value="{{ current_user.department or '' }}" placeholder="e.g. Computer Science" required>
+        </div>
+        <button type="submit" class="btn-action" style="background-color: #3b82f6;">Save Department</button>
+    </form>
+</div>
+
+<!-- Add Course Form -->
+<div class="card-section">
+    <div class="section-title">Add Course for Semester</div>
+    <form action="{{ url_for('add_course') }}" method="POST">
+        <div class="form-group">
+            <label for="course_code">Course Code</label>
+            <input type="text" id="course_code" name="course_code" placeholder="e.g. CSC 301" required>
+        </div>
+        <div class="form-group">
+            <label for="course_name">Course Title</label>
+            <input type="text" id="course_name" name="course_name" placeholder="e.g. Data Structures" required>
+        </div>
+        <div class="form-group">
+            <label for="units">Course Units</label>
+            <input type="number" id="units" name="units" placeholder="3" min="1" max="6" required>
+        </div>
+        <button type="submit" class="btn-action">Add Course</button>
+    </form>
+</div>
+
+<script>
+    document.querySelectorAll('.progress-bar-fill').forEach(bar => {
+        const width = bar.getAttribute('data-width');
+        if (width) {
+            bar.style.width = width + '%';
+        }
+    });
+</script>
+{% endblock %}

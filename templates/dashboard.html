@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 30px; background-color: #f4f6f9; }
+        .card { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .progress-container { background-color: #e0e0e0; border-radius: 10px; height: 18px; width: 100%; overflow: hidden; margin-top: 5px; }
+        .progress-bar { height: 100%; background-color: #4caf50; text-align: center; color: white; font-size: 11px; line-height: 18px; }
+        .empty-state { color: #777; font-style: italic; }
+        form { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 8px 15px; background-color: #2196F3; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <!-- Personal Info Section (User Input) -->
+    <div class="card">
+        <h2>Student Profile</h2>
+        {% if current_user.department %}
+            <p><strong>Name:</strong> {{ current_user.name or 'Not set' }}</p>
+            <p><strong>Department:</strong> {{ current_user.department }}</p>
+        {% else %}
+            <p class="empty-state">No profile details set yet. Please fill out your details below:</p>
+        {% endif %}
+
+        <form action="{{ url_for('update_profile') }}" method="POST">
+            <input type="text" name="name" placeholder="Full Name" value="{{ current_user.name or '' }}" required>
+            <input type="text" name="department" placeholder="Department (e.g., Computer Science)" value="{{ current_user.department or '' }}" required>
+            <button type="submit">Save Profile</button>
+        </form>
+    </div>
+
+    <!-- Overall Attendance Summary Bar -->
+    <div class="card">
+        <h2>Overall Attendance Overview</h2>
+        <p>Total Attended: <strong>{{ total_attended }} / {{ total_held }}</strong> classes</p>
+        <div class="progress-container">
+            <div class="progress-bar" style="width: {{ overall_percentage }}%;">
+                {{ overall_percentage }}%
+            </div>
+        </div>
+    </div>
+
+    <!-- Course List with Individual Attendance Bars -->
+    <div class="card">
+        <h2>Enrolled Courses</h2>
+
+        {% if courses %}
+            {% for course in courses %}
+                <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+                    <strong>{{ course.code }} - {{ course.name }}</strong>
+                    <p style="margin: 3px 0; font-size: 14px; color: #555;">
+                        Attended: {{ course.attended_classes }} / {{ course.total_classes }} classes
+                    </p>
+                    <!-- Individual Course Attendance Bar -->
+                    <div class="progress-container">
+                        <div class="progress-bar" style="width: {{ course.percentage }}%;">
+                            {{ course.percentage }}%
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-state">No courses added yet. Add your first course below.</p>
+        {% endif %}
+
+        <h3 style="margin-top: 25px;">Add New Course</h3>
+        <form action="{{ url_for('add_course') }}" method="POST">
+            <input type="text" name="code" placeholder="Course Code (e.g. CS101)" required>
+            <input type="text" name="name" placeholder="Course Name" required>
+            <input type="number" name="attended" placeholder="Classes Attended" min="0" required>
+            <input type="number" name="total" placeholder="Total Classes Held" min="0" required>
+            <button type="submit">Add Course</button>
+        </form>
+    </div>
+
+</body>
+</html>

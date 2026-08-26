@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Courses | My Attendance{% endblock %}
+{% block heading %}My Courses{% endblock %}
+{% block content %}
+<div class="two-col">
+<div class="form-card">
+<h2>Add Course</h2>
+<form method="post">
+<label>Course code<input name="code" required placeholder="CSC 201"></label>
+<label>Course title<input name="name" required placeholder="Computer Science"></label>
+<label>Lecturer<input name="lecturer" placeholder="Dr. Name"></label>
+<label>Credit units<input name="units" type="number" min="0" max="20" value="3"></label>
+<button class="button" type="submit">+ Add Course</button>
+</form>
+</div>
+<div>
+{% for c in courses %}
+<div class="list-card">
+<div><span class="course-code">{{ c.code }}</span><h3>{{ c.name }}</h3><p class="muted">{{ c.lecturer or "No lecturer" }}</p></div>
+<div class="right"><strong>{{ c.percentage }}%</strong>
+<form method="post" action="{{ url_for('delete_course', course_id=c.id) }}" onsubmit="return confirm('Delete this course and its attendance records?')">
+<button class="danger-link">Delete</button></form></div>
+</div>
+{% else %}<div class="empty">Add a course to get started.</div>{% endfor %}
+</div>
+</div>
+{% endblock %}

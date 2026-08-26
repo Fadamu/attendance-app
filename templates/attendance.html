@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Attendance | My Attendance{% endblock %}
+{% block heading %}Record Attendance{% endblock %}
+{% block content %}
+<div class="form-card">
+<h2>New Attendance Record</h2>
+{% if courses %}
+<form method="post">
+<label>Course<select name="course_id" required>
+{% for c in courses %}<option value="{{ c.id }}">{{ c.code }} — {{ c.name }}</option>{% endfor %}
+</select></label>
+<label>Date<input type="date" name="attendance_date" value="{{ today }}" required></label>
+<label>Status<select name="status" required><option>Present</option><option>Absent</option><option>Late</option></select></label>
+<button class="button" type="submit">Save Attendance</button>
+</form>
+{% else %}<p class="muted">Add a course first before recording attendance.</p><a class="button" href="{{ url_for('courses') }}">Add Course</a>{% endif %}
+</div>
+
+<div class="section-head"><h2>Attendance History</h2></div>
+<div class="table-card">
+<table>
+<thead><tr><th>Date</th><th>Course</th><th>Status</th><th></th></tr></thead>
+<tbody>
+{% for r in records %}
+<tr><td>{{ r.attendance_date }}</td><td><b>{{ r.code }}</b> · {{ r.name }}</td>
+<td><span class="badge {{ r.status|lower }}">{{ r.status }}</span></td>
+<td><form method="post" action="{{ url_for('delete_attendance', record_id=r.id) }}"><button class="delete-btn">×</button></form></td></tr>
+{% else %}<tr><td colspan="4" class="empty">No records yet.</td></tr>{% endfor %}
+</tbody>
+</table>
+</div>
+{% endblock %}
